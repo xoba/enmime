@@ -387,8 +387,12 @@ func (p MailBuilder) Build() (*Part, error) {
 	// Headers
 	h := root.Header
 	h.Set(hnMIMEVersion, "1.0")
-	h.Set("From", p.from.String())
-	h.Set("Subject", p.subject)
+	if len(p.from.Address) > 0 {
+		h.Set("From", p.from.String())
+	}
+	if len(p.subject) > 0 {
+		h.Set("Subject", p.subject)
+	}
 	if len(p.to) > 0 {
 		h.Set("To", stringutil.JoinAddress(p.to))
 	}
