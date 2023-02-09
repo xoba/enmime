@@ -30,6 +30,7 @@ type MailBuilder struct {
 	inlines, attachments []*Part
 	err                  error
 	randSource           rand.Source
+	dontValidate         bool
 }
 
 // Builder returns an empty MailBuilder struct.
@@ -40,6 +41,12 @@ func Builder() MailBuilder {
 // RandSeed sets the seed for random uuid boundary strings.
 func (p MailBuilder) RandSeed(seed int64) MailBuilder {
 	p.randSource = stringutil.NewLockedSource(seed)
+	return p
+}
+
+// DontValidate prevents validation of from/to/cc/bcc.
+func (p MailBuilder) DontValidate() MailBuilder {
+	p.dontValidate = true
 	return p
 }
 
@@ -309,12 +316,14 @@ func (p MailBuilder) Build() (*Part, error) {
 	if p.err != nil {
 		return nil, p.err
 	}
-	// Validations
-	if p.from.Address == "" {
-		return nil, errors.New("from not set")
-	}
-	if len(p.to)+len(p.cc)+len(p.bcc) == 0 {
-		return nil, errors.New(ErrorMissingRecipient)
+	if !p.dontValidate {
+		// Validations
+		if p.from.Address == "" {
+			return nil, errors.New("from not set")
+		}
+		if len(p.to)+len(p.cc)+len(p.bcc) == 0 {
+			return nil, errors.New(ErrorMissingRecipient)
+		}
 	}
 	// Fully loaded structure; the presence of text, html, inlines, and attachments will determine
 	// how much is necessary:
